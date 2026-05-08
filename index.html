@@ -38,7 +38,6 @@
             background-color: #dc3545;
             animation: pulse 1.5s infinite;
         }
-        /* Updated from 'input' to 'textarea' to style the multiline box */
         textarea {
             width: 100%;
             height: 150px;
@@ -80,9 +79,15 @@
         recognition.lang = 'en-US'; // Change this to 'pt-BR' for Portuguese
 
         let isListening = false;
+        
+        // Store previously finalized text globally in this scope so both onresult and click handlers can use it
+        let finalizedContent = '';
 
         startBtn.addEventListener('click', () => {
             if (!isListening) {
+                // Clear previous text history when starting fresh
+                finalizedContent = '';
+                outputText.value = '';
                 recognition.start();
             } else {
                 recognition.stop();
@@ -102,25 +107,42 @@
         };
 
         recognition.onresult = (event) => {
-            let finalTranscript = '';
+            let interimTranscript = '';
+            let newFinalTranscript = '';
+
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                }
-            }
-            
-            // Append the new final transcript to the existing text
-            if (finalTranscript) {
-                // If there's already text, add a line break before the new sentence
-                if (outputText.value.trim() !== "") {
-                    outputText.value += "\n" + finalTranscript.trim();
+                    newFinalTranscript += transcript;
                 } else {
-                    outputText.value = finalTranscript.trim();
+                    interimTranscript += transcript;
                 }
-                
-                // Automatically scroll to the bottom so the newest text is always visible
-                outputText.scrollTop = outputText.scrollHeight;
             }
+
+            // 1. If we got new finished sentences, permanently append them to our finalized history
+            if (newFinalTranscript) {
+                if (finalizedContent.trim() !== "") {
+                    finalizedContent += "\n" + newFinalTranscript.trim();
+                } else {
+                    finalizedContent = newFinalTranscript.trim();
+                }
+            }
+
+            // 2. Combine the finalized history with whatever the user is currently saying in real-time
+            let currentDisplay = finalizedContent;
+            if (interimTranscript) {
+                if (currentDisplay.trim() !== "") {
+                    currentDisplay += " " + interimTranscript.trim();
+                } else {
+                    currentDisplay = interimTranscript.trim();
+                }
+            }
+
+            // 3. Update the textarea
+            outputText.value = currentDisplay;
+
+            // Automatically scroll to the bottom
+            outputText.scrollTop = outputText.scrollHeight;
         };
 
         recognition.onerror = (event) => {
