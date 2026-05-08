@@ -38,13 +38,17 @@
             background-color: #dc3545;
             animation: pulse 1.5s infinite;
         }
-        input {
+        /* Updated from 'input' to 'textarea' to style the multiline box */
+        textarea {
             width: 100%;
+            height: 150px;
             padding: 12px;
             font-size: 1.1rem;
             border: 2px solid #ddd;
             border-radius: 8px;
             box-sizing: border-box;
+            resize: vertical;
+            font-family: sans-serif;
         }
         @keyframes pulse {
             0% { opacity: 1; }
@@ -58,7 +62,7 @@
 <div class="container">
     <h2>Lottery Voice Input</h2>
     <button id="start-btn">Start Listening</button>
-    <input type="text" id="output-text" placeholder="Recognized text will appear here...">
+    <textarea id="output-text" placeholder="Recognized text will appear here..."></textarea>
 </div>
 
 <script>
@@ -104,9 +108,18 @@
                     finalTranscript += event.results[i][0].transcript;
                 }
             }
-            // If we have a final result, put it in the input box
+            
+            // Append the new final transcript to the existing text
             if (finalTranscript) {
-                outputText.value = finalTranscript;
+                // If there's already text, add a line break before the new sentence
+                if (outputText.value.trim() !== "") {
+                    outputText.value += "\n" + finalTranscript.trim();
+                } else {
+                    outputText.value = finalTranscript.trim();
+                }
+                
+                // Automatically scroll to the bottom so the newest text is always visible
+                outputText.scrollTop = outputText.scrollHeight;
             }
         };
 
